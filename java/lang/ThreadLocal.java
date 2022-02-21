@@ -70,6 +70,14 @@ import java.util.function.Supplier;
  *
  * @author  Josh Bloch and Doug Lea
  * @since   1.2
+ *
+ * ThreadLocal这个类提供线程局部变量.
+ * 这些变量与正常的变量不同，每个线程访问一个(通过它的get或set方法)都有它自己的、独立初始化的变量副本.
+ * ThreadLocal实例通常是类中的私有静态字段，希望将状态与线程关联(例如，用户ID或事务ID).
+ *
+ * <br/>
+ *
+ * 用户可以自定义initialValue()初始化方法，来初始化threadLocal的值.
  */
 public class ThreadLocal<T> {
     /**
@@ -81,12 +89,21 @@ public class ThreadLocal<T> {
      * in the common case where consecutively constructed ThreadLocals
      * are used by the same threads, while remaining well-behaved in
      * less common cases.
+     *
+     * 线程通过ThreadLocal#get获取值时，如果是第一次获取，会给当前线程分配一个value.
+     * 这个value和当前的ThreadLocal对象被包装成一个Entry对象.
+     * 这个Entry存放到当前线程threadLocals字段这个map的哪个桶位，这与当前ThreadLocal对象
+     * 的threadLocalHashCode有关系，即通过 “threadLocalHashCode & (table.length-1)”
+     * 这个公式进行计算.
      */
     private final int threadLocalHashCode = nextHashCode();
 
     /**
      * The next hash code to be given out. Updated atomically. Starts at
      * zero.
+     *
+     * <br/>
+     * 每创建一个ThreadLocal对象，就会使用nextHashCode分配一个hash值给这个对象.
      */
     private static AtomicInteger nextHashCode =
         new AtomicInteger();
@@ -95,6 +112,9 @@ public class ThreadLocal<T> {
      * The difference between successively generated hash codes - turns
      * implicit sequential thread-local IDs into near-optimally spread
      * multiplicative hash values for power-of-two-sized tables.
+     *
+     * <br/>
+     * 黄金分隔数 -> 使得hash分布更加均匀
      */
     private static final int HASH_INCREMENT = 0x61c88647;
 
@@ -155,11 +175,16 @@ public class ThreadLocal<T> {
      * by an invocation of the {@link #initialValue} method.
      *
      * @return the current thread's value of this thread-local
+     *
+     * 返回当前线程与当前ThreadLocal对象相关联的线程局部变量.
+     * 这个变量只有当前线程能访问到.
+     * 如果当前线程没有分配，则使用initialValue方法给当前线程分配
      */
     public T get() {
         Thread t = Thread.currentThread();
+        // 获取当前线程Thread对象的ThreadLocalMap引用
         ThreadLocalMap map = getMap(t);
-        if (map != null) {
+        if (map != null) { // 当前线程的ThreadLocalMap对象已被初始化
             ThreadLocalMap.Entry e = map.getEntry(this);
             if (e != null) {
                 @SuppressWarnings("unchecked")
@@ -181,6 +206,7 @@ public class ThreadLocal<T> {
         Thread t = Thread.currentThread();
         ThreadLocalMap map = getMap(t);
         if (map != null)
+            // key: 当前ThreadLocal对象!
             map.set(this, value);
         else
             createMap(t, value);
@@ -200,6 +226,7 @@ public class ThreadLocal<T> {
         Thread t = Thread.currentThread();
         ThreadLocalMap map = getMap(t);
         if (map != null)
+            // 进行重写或添加
             map.set(this, value);
         else
             createMap(t, value);
@@ -241,6 +268,7 @@ public class ThreadLocal<T> {
      * @param firstValue value for the initial entry of the map
      */
     void createMap(Thread t, T firstValue) {
+        // 初始化线程Thread对象的threadLocals域
         t.threadLocals = new ThreadLocalMap(this, firstValue);
     }
 
