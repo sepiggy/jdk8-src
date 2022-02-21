@@ -388,9 +388,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a power of two size for the given target capacity.
+     * Returns a power of two size for the given target capacity. <br/>
      *
-     * 返回一个大于等于当前cap值的一个数字，并且这个数字是2的幂
+     * 返回一个大于等于当前cap值的一个数字，并且这个数字是2的幂 <br/>
      *
      * eg. cap=10
      *     n=9
