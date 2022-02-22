@@ -608,13 +608,15 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
         if ((tab = table) != null && (n = tab.length) > 0 &&
             (first = tab[(n - 1) & hash]) != null) {
+            // 情况1. 定位出来的桶位元素即为要找的数据
             if (first.hash == hash && // always check first node
                 ((k = first.key) == key || (key != null && key.equals(k))))
                 return first;
+            // 情况2. 当前桶位不止一个元素
             if ((e = first.next) != null) {
-                if (first instanceof TreeNode)
+                if (first instanceof TreeNode) // 红黑树
                     return ((TreeNode<K,V>)first).getTreeNode(hash, key);
-                do {
+                do { // 链表
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
                         return e;
@@ -910,17 +912,28 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final Node<K,V> removeNode(int hash, Object key, Object value,
                                boolean matchValue, boolean movable) {
+        // tab: 引用当前 HashMap 中的散列表
+        // p: 当前 Node 元素
+        // n: 表示散列表数组长度
+        // index: 表示寻址结果
         Node<K,V>[] tab; Node<K,V> p; int n, index;
         if ((tab = table) != null && (n = tab.length) > 0 &&
             (p = tab[index = (n - 1) & hash]) != null) {
+            // 说明路由的桶位是有数据的，需要进行查找操作，并且删除
+            // node: 查找到的结果
+            // e: 当前 Node 的下一个元素
             Node<K,V> node = null, e; K k; V v;
+
+            // 情况1) 当前桶位中的元素即为你要删除的元素
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
                 node = p;
             else if ((e = p.next) != null) {
-                if (p instanceof TreeNode)
+                if (p instanceof TreeNode) // 红黑树
+                    // 情况2) 红黑树查找操作
                     node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
-                else {
+                else { // 链表
+                    // 情况3) 链表查找操作
                     do {
                         if (e.hash == hash &&
                             ((k = e.key) == key ||
@@ -932,10 +945,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     } while ((e = e.next) != null);
                 }
             }
+            // node即为查找到要删除的元素
+            // 若node不为空, 说明按照key查找到需要删除的数据了
             if (node != null && (!matchValue || (v = node.value) == value ||
                                  (value != null && value.equals(v)))) {
+                // node是树节点，需要进行树节点移除操作
                 if (node instanceof TreeNode)
                     ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable);
+                // 桶位元素即为要删除的数据，则将该元素的下一个元素放至桶位中
                 else if (node == p)
                     tab[index] = node.next;
                 else
